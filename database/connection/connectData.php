@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace App;
+namespace Database\Connection;
 
 use PDO;
 
-final class Database
+final class ConnectData
 {
     public static function getConnection(): PDO
     {

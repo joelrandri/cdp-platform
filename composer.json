@@ -1,0 +1,8 @@
+{
+    "autoload": {
+        "psr-4": {
+            "Database\\Connection\\": "database/connection/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    }
+}
