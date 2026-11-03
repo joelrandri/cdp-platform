@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Core;
@@ -17,19 +18,40 @@ class Router
         $this->routes['GET'][$uri] = $action;
     }
 
+    public function getDynamic(string $pattern, callable $action): void
+    {
+        $this->routes['GET'][$pattern] = $action;
+    }
+
     public function dispatch(string $method, string $uri): void
     {
-        if (isset($this->routes[$method][$uri])) {
-            $this->routes[$method][$uri]();
-        } else {
-            http_response_code(404);
+        $action = $this->routes[$method][$uri] ?? null;
 
-            header('Content-Type: application/json; charset=utf-8');
-
-            echo json_encode([
-                'success' => false,
-                'message' => 'Route not found'
-            ]);
+        if ($action !== null) {
+            $action();
+            return;
         }
+
+        foreach ($this->routes[$method] ?? [] as $pattern => $callback) {
+            $regex = preg_replace(
+                '#\{id\}#',
+                '([0-9]+)',
+                $pattern
+            );
+
+            if (preg_match('#^' . $regex . '$#', $uri, $matches)) {
+                $callback((int) $matches[1]);
+                return;
+            }
+        }
+
+        http_response_code(404);
+
+        header('Content-Type: application/json; charset=utf-8');
+
+        echo json_encode([
+            'success' => false,
+            'message' => 'Route not found'
+        ]);
     }
 }
