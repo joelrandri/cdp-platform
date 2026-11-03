@@ -31,9 +31,16 @@ $customerService = new CustomerService($customerRepository);
 
 $customerController = new CustomerController($customerService);
 
+// Customers
+
 $router->getDynamic(
     '/api/customers/{id}',
     [$customerController, 'show']
+);
+
+$router->get(
+    '/api/customers',
+    [$customerController, 'index']
 );
 
 // Customer Segmentation

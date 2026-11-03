@@ -13,6 +13,32 @@ class CustomerRepository
     ) {
     }
 
+    public function findAll(int $limit, int $offset): array
+    {
+        $sql = "
+            SELECT id, name, email, created_at
+            FROM customers
+            ORDER BY id DESC
+            LIMIT :limit OFFSET :offset
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
+    public function countAll(): int
+    {
+        $sql = "SELECT COUNT(*) FROM customers";
+
+        return (int) $this->pdo->query($sql)->fetchColumn();
+    }
+
     public function findById(int $id): array|false
     {
         $sql = "

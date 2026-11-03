@@ -5,5 +5,8 @@
             "Database\\Seeders\\": "database/seeders/",
             "App\\": "app/"
         }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
     }
 }
