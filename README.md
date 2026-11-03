@@ -1,93 +1,379 @@
 # cdp-platform
-
-
-
 ## Getting started
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+# Customer Data Platform (CDP)
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+A lightweight Customer Data Platform backend built with native PHP and MySQL. The application collects customer events, stores customer information, provides customer profiles, and supports customer segmentation.
 
-## Add your files
+## 1. Requirements
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+- PHP 8.2 or higher
+- MySQL 8.0 or higher
+- Composer
+- Postman
+
+## 2. Setup Instructions
+
+### Clone the repository
+
+```bash
+git clone https://gitlab.com/tours2019/cdp-platform.git
+cd cdp-platform
+```
+
+### Install dependencies
+
+```bash
+composer install
+```
+
+### Configure the database
+
+Create a MySQL database:
+
+```sql
+CREATE DATABASE cdp_test_4000;
+```
+
+Configure your database connection in `config/database.php`:
+
+```php
+return [
+    'host' => '127.0.0.1',
+    'port' => 3306,
+    'database' => 'cdp_test_4000',
+    'username' => 'root',
+    'password' => '',
+    'charset' => 'utf8mb4'
+];
+```
+
+Update these values according to your local MySQL configuration.
+
+### Create database tables
+
+Create the following tables:
+
+- `customers`
+- `events`
+- `event_properties`
+
+Configure primary keys, foreign keys, unique constraints, and indexes according to the database schema.
+
+### Run database seeders
+
+```bash
+php database/seed.php
+```
+
+This command inserts sample customers and events for testing.
+
+## 3. How to Run the Project
+
+Start the PHP development server:
+
+```bash
+php -S localhost:8000 -t public
+```
+
+The API will be available at:
+
+```text
+http://localhost:8000
+```
+
+Use Postman or another HTTP client to send requests.
+
+## 4. API Documentation
+
+All endpoints return JSON responses.
+
+### 4.1 Ingest an Event
+
+**Endpoint**
+
+```http
+POST /api/events
+```
+
+**Headers**
+
+```http
+Content-Type: application/json
+```
+
+**Request body**
+
+```json
+{
+    "email": "joel@test.com",
+    "name": "Joel kevin",
+    "event_type": "purchase",
+    "properties": {
+        "price": 1200,
+        "currency": "EUR",
+        "quantity": 1
+    }
+}
+```
+
+**Successful response (201)**
+
+```json
+{
+    "success": true,
+    "data": {
+        "customer_id": 1,
+        "event_id": 25
+    }
+}
+```
+
+The API creates a customer if the email does not exist. Otherwise, it updates the existing customer's name and associates the new event with that customer.
+
+### 4.2 Get a Customer Profile
+
+**Endpoint**
+
+```http
+GET /api/customers/{id}
+```
+
+**Example**
+
+```http
+GET /api/customers/1
+```
+
+Returns customer information, statistics, and the last 10 events.
+
+**Example response**
+
+```json
+{
+    "success": true,
+    "data": {
+        "customer": {
+            "id": 1,
+            "name": "Joel Kevin",
+            "email": "joel@test.com"
+        },
+        "statistics": {
+            "total_purchases": 2,
+            "total_spend": 1500
+        },
+        "recent_events": []
+    }
+}
+```
+
+### 4.3 List Customers
+
+**Endpoint**
+
+```http
+GET /api/customers
+```
+
+**Query parameters**
+
+| Parameter | Description | Default |
+|---|---|---|
+| `page` | Page number | 1 |
+| `limit` | Number of customers per page | 20 |
+
+**Example**
+
+```http
+GET /api/customers?page=1&limit=10
+```
+
+Returns a paginated list of customers.
+
+### 4.4 Customer Segmentation
+
+**Endpoint**
+
+```http
+GET /api/segments/customers
+```
+
+**Query parameters**
+
+| Parameter | Description |
+|---|---|
+| `min_purchases` | Minimum number of purchases |
+| `min_spend` | Minimum total spending |
+
+**Example**
+
+```http
+GET /api/segments/customers?min_purchases=2&min_spend=1000
+```
+
+Returns customers matching the specified purchase and spending criteria.
+
+### 4.5 Dynamic Segmentation
+
+**Endpoint**
+
+```http
+POST /api/segments/query
+```
+
+**Headers**
+
+```http
+Content-Type: application/json
+```
+
+**Request body**
+
+```json
+{
+    "conditions": [
+        {
+            "event": "purchase",
+            "property": "price",
+            "operator": ">",
+            "value": 100
+        }
+    ]
+}
+```
+
+Supported operators:
+
+- `=`
+- `!=`
+- `>`
+- `<`
+- `>=`
+- `<=`
+
+Multiple conditions can be provided. Conditions are combined using AND logic.
+
+Returns customers matching the requested event conditions.
+
+## 6. Running Tests
+
+### Unit tests
+
+Run the unit tests:
+
+```bash
+vendor/bin/phpunit tests/Unit
+```
+
+Unit tests use mocks to test application services independently of the database.
+
+
+## 7. Architecture
+
+The project follows a layered architecture inspired by MVC:
+
+```text
+app/
+├── Core/
+├── Controllers/
+├── Middleware/
+├── Repositories/
+├── Services/
+
+config/
+database/
+├── connection/
+└── seeders/
+
+public/
+├── assets/
+├── index.php
+└── dashboard.php
+
+routes/
+tests/
+├── Unit/
+└── Integration/
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/tours2019/cdp-platform.git
-git branch -M main
-git push -uf origin main
-```
 
-## Integrate with your tools
+### Main responsibilities
 
-* [Set up project integrations](https://gitlab.com/tours2019/cdp-platform/-/settings/integrations)
+- **Controllers:** Handle HTTP requests and responses.
+- **Services:** Contain business logic and validation.
+- **Repositories:** Handle database operations using PDO.
+- **Middleware:** Handle cross-cutting concerns such as API authentication.
+- **Workers:** Process background jobs.
+- **Core:** Contains shared application components such as routing and constants.
 
-## Collaborate with your team
+## 8. Design Decisions and Tradeoffs
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+### Native PHP instead of a framework
 
-## Test and Deploy
+The application uses native PHP to demonstrate backend fundamentals, including object-oriented programming, PDO, HTTP handling, and application architecture.
 
-Use the built-in continuous integration in GitLab.
+**Tradeoff:** More manual implementation is required compared with using a framework such as Laravel.
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+### MySQL relational database
 
-***
+Customers, events, and event properties are stored in separate tables.
 
-# Editing this README
+**Reason:** This structure avoids unnecessary duplication and supports relational queries.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+**Tradeoff:** Retrieving event properties requires joins, but indexes help improve query performance.
 
-## Suggestions for a good README
+### Event properties stored separately
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+Event properties use a key-value structure in `event_properties`.
 
-## Name
-Choose a self-explaining name for your project.
+**Reason:** Different event types can have different properties without requiring new database columns for every possible property.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### PDO prepared statements
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+All dynamic values are passed through prepared statements.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+**Reason:** This helps prevent SQL injection and separates SQL instructions from user-provided data.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### Database transactions
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+Customer creation, event insertion, and property insertion are performed in a transaction.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+**Reason:** Either all related operations succeed, or the transaction is rolled back.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### EXISTS for dynamic segmentation
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+Dynamic segmentation uses SQL `EXISTS` conditions to check matching events and properties.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+**Reason:** This avoids unnecessary duplicate customer rows when multiple events match.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+**Tradeoff:** Query performance depends on appropriate indexes and the number of segmentation conditions.
 
-## License
-For open source projects, say how it is licensed.
+### Pagination
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Customer listing uses `LIMIT` and `OFFSET`.
+
+**Reason:** It avoids returning the entire customer table in one request.
+
+**Tradeoff:** Large OFFSET values can become inefficient; cursor-based pagination may be preferable for very large datasets.
+
+
+## 9. Security Considerations
+
+- Validate incoming API data.
+- Use PDO prepared statements.
+- Avoid exposing database credentials.
+- Store API keys as secure hashes if API key authentication is enabled.
+- Do not commit secrets or environment-specific credentials to Git.
+- Return generic error messages to API clients and log technical details server-side.
+
+## 10. Future Improvements
+
+- Add API key authentication and permissions.
+- Improve job queue concurrency and retry handling.
+- Add more unit and integration tests.
+- Improve segmentation query optimization.
+- Add structured logging and monitoring.
+- Support multi-currency purchase calculations.
+- Introduce cursor-based pagination for large datasets.j
+
