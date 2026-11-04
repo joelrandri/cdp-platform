@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace App\Repositories;
@@ -23,11 +22,13 @@ class EventRepository
         $this->pdo->beginTransaction();
 
         try {
-            // 1. Create or update customer
+            // 1. Créer ou mettre à jour le client
             $sql = "
                 INSERT INTO customers (name, email)
                 VALUES (:name, :email)
-                ON DUPLICATE KEY UPDATE name = VALUES(name)
+
+                ON DUPLICATE KEY UPDATE
+                    name = VALUES(name)
             ";
 
             $stmt = $this->pdo->prepare($sql);
@@ -37,25 +38,37 @@ class EventRepository
                 'email' => $email
             ]);
 
-            // 2. Retrieve customer id
-            $stmt = $this->pdo->prepare(
-                "SELECT id FROM customers WHERE email = :email"
-            );
+            // 2. Récupérer l'identifiant du client
+            $stmt = $this->pdo->prepare("
+                SELECT id
+                FROM customers
+                WHERE email = :email
+            ");
 
-            $stmt->execute(['email' => $email]);
+            $stmt->execute([
+                'email' => $email
+            ]);
 
             $customer = $stmt->fetch();
 
             if (!$customer) {
-                throw new RuntimeException('Customer not found');
+                throw new RuntimeException(
+                    'Customer not found'
+                );
             }
 
             $customerId = (int) $customer['id'];
 
-            // 3. Save event
+            // 3. Enregistrer l'événement
             $stmt = $this->pdo->prepare("
-                INSERT INTO events (customer_id, event_type)
-                VALUES (:customer_id, :event_type)
+                INSERT INTO events (
+                    customer_id,
+                    event_type
+                )
+                VALUES (
+                    :customer_id,
+                    :event_type
+                )
             ");
 
             $stmt->execute([
@@ -65,39 +78,69 @@ class EventRepository
 
             $eventId = (int) $this->pdo->lastInsertId();
 
-            // 4. Save the event propertises
+            // 4. Enregistrer les propriétés de l'événement
             if (!empty($properties)) {
+
                 $propertySql = "
-                    INSERT INTO event_properties
-                    (event_id, property_name, property_value)
-                    VALUES (:event_id, :property_name, :property_value)
+                    INSERT INTO event_properties (
+                        event_id,
+                        property_name,
+                        property_value,
+                        value_number
+                    )
+                    VALUES (
+                        :event_id,
+                        :property_name,
+                        :property_value,
+                        :value_number
+                    )
                 ";
 
                 $propertyStmt = $this->pdo->prepare($propertySql);
 
                 foreach ($properties as $key => $value) {
-                    if (is_array($value) || is_object($value)) {
-                        $value = json_encode(
+
+                    $propertyValue = null;
+                    $valueNumber = null;
+
+                    // Valeurs numériques
+                    if (
+                        is_int($value) ||
+                        is_float($value) ||
+                        (is_string($value) && is_numeric($value))
+                    ) {
+                        $propertyValue = (string) $value;
+                        $valueNumber = $value;
+
+                    // Valeurs booléennes
+                    } elseif (is_bool($value)) {
+                        $propertyValue = $value ? 'true' : 'false';
+
+                    // Valeurs nulles
+                    } elseif ($value === null) {
+                        $propertyValue = null;
+
+                    // Tableaux et objets JSON
+                    } elseif (is_array($value) || is_object($value)) {
+                        $propertyValue = json_encode(
                             $value,
                             JSON_THROW_ON_ERROR
                         );
-                    } elseif (is_bool($value)) {
-                        $value = $value ? 'true' : 'false';
-                    } elseif ($value === null) {
-                        $value = null;
+
+                    // Valeurs textuelles
                     } else {
-                        $value = (string) $value;
+                        $propertyValue = (string) $value;
                     }
 
                     $propertyStmt->execute([
                         'event_id' => $eventId,
                         'property_name' => (string) $key,
-                        'property_value' => $value
+                        'property_value' => $propertyValue,
+                        'value_number' => $valueNumber
                     ]);
                 }
             }
 
-            // 5. Validate transaction
             $this->pdo->commit();
 
             return [
@@ -106,6 +149,7 @@ class EventRepository
             ];
 
         } catch (Throwable $e) {
+
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }

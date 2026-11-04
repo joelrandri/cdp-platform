@@ -36,51 +36,108 @@
         </section>
 
         <!-- Segmentation -->
-        <section class="card">
-            <h2>Segmentation des clients</h2>
+        
+        <section class="segmentation-section">
+            <h2>Customer Segmentation</h2>
 
-            <form id="segment-form">
+            <div class="segmentation-form">
+
                 <div class="form-group">
-                    <label for="event">Événement</label>
-                    <select id="event" required>
-                        <option value="purchase">Purchase</option>
-                        <option value="page_view">Page View</option>
+                    <label for="segment-logic">Condition logic</label>
+
+                    <select id="segment-logic">
+                        <option value="AND">AND - Toutes les conditions</option>
+                        <option value="OR">OR - Au moins une condition</option>
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label for="property">Propriété</label>
-                    <select id="property" required>
-                        <option value="price">Price</option>
-                        <option value="quantity">Quantity</option>
-                    </select>
+                <div id="segment-conditions">
+
+                    <div class="condition-row">
+
+                        <input
+                            type="text"
+                            class="condition-event"
+                            value="purchase"
+                            placeholder="Event"
+                        >
+
+                        <input
+                            type="text"
+                            class="condition-property"
+                            value="amount"
+                            placeholder="Property"
+                        >
+
+                        <select class="condition-type">
+                            <option value="number">Number</option>
+                            <option value="string">String</option>
+                        </select>
+
+                        <select class="condition-operator">
+                            <option value=">">Greater than</option>
+                            <option value="=">Equal</option>
+                            <option value="!=">Not equal</option>
+                            <option value="<">Less than</option>
+                            <option value=">=">Greater or equal</option>
+                            <option value="<=">Less or equal</option>
+                        </select>
+
+                        <input
+                            type="text"
+                            class="condition-value"
+                            value="100"
+                            placeholder="Value"
+                        >
+
+                        <button type="button" class="remove-condition">
+                            Remove
+                        </button>
+
+                    </div>
+
                 </div>
 
-                <div class="form-group">
-                    <label for="operator">Opérateur</label>
-                    <select id="operator" required>
-                        <option value=">">Supérieur à</option>
-                        <option value="<">Inférieur à</option>
-                        <option value="=">Égal à</option>
-                        <option value=">=">Supérieur ou égal à</option>
-                        <option value="<=">Inférieur ou égal à</option>
-                        <option value="!=">Différent de</option>
-                    </select>
+                <div class="segmentation-actions">
+                    <button type="button" id="add-condition">
+                        + Add condition
+                    </button>
+
+                    <button type="button" id="run-segmentation">
+                        Run segmentation
+                    </button>
                 </div>
 
-                <div class="form-group">
-                    <label for="value">Valeur</label>
-                    <input type="number" id="value" step="0.01" required>
-                </div>
+                <p id="segment-message"></p>
 
-                <button type="submit">Rechercher les clients</button>
-            </form>
+            </div>
 
-            <div id="segment-results"></div>
+            <div class="segmentation-results">
+                <h3>Matching customers</h3>
+
+                <p id="segment-count">No search performed</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="segment-results">
+                        <tr>
+                            <td colspan="3">No results yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </section>
 
     </main>
 
     <script src="assets/js/app.js"></script>
+    <script src="assets/js/segmentation.js" defer></script>
 </body>
 </html>

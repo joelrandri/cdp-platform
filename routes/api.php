@@ -7,9 +7,9 @@ use Database\Connection\ConnectData;
 use App\Controllers\CustomerController;
 use App\Services\CustomerService;
 use App\Repositories\CustomerRepository;
-use App\Controllers\CustomerSegmentationController;
-use App\Services\CustomerSegmentationService;
+use App\Controllers\SegmentController;
 use App\Repositories\CustomerSegmentationRepository;
+use App\Services\SegmentService;
 
 $pdo = ConnectData::getConnection();
 
@@ -45,21 +45,22 @@ $router->get(
 
 // Customer Segmentation
 
-$customerSegmentationRepository =
-    new CustomerSegmentationRepository($pdo);
+$segmentationRepository = new CustomerSegmentationRepository($pdo);
 
-$customerSegmentationService =
-    new CustomerSegmentationService($customerSegmentationRepository);
+$segmentService = new SegmentService(
+    $segmentationRepository
+);
 
-$customerSegmentationController =
-    new CustomerSegmentationController($customerSegmentationService);
+$segmentController = new SegmentController(
+    $segmentService
+);
 
 $router->get(
     '/api/segments/customers',
-    [$customerSegmentationController, 'index']
+    [$segmentController, 'index']
 );
 
 $router->post(
     '/api/segments/query',
-    [$customerSegmentationController, 'query']
+    [$segmentController, 'query']
 );

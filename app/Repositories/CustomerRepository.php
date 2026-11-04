@@ -96,10 +96,7 @@ class CustomerRepository
     public function getTotalSpend(int $customerId): float
     {
         $sql = "
-            SELECT COALESCE(
-                SUM(CAST(ep.property_value AS DECIMAL(10,2))),
-                0
-            )
+            SELECT COALESCE(SUM(ep.value_number), 0)
             FROM events e
             INNER JOIN event_properties ep
                 ON ep.event_id = e.id
