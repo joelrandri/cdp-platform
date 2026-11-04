@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le : mar. 03 nov. 2026 à 15:12
+-- Généré le : mer. 04 nov. 2026 à 15:28
 -- Version du serveur : 8.0.31
 -- Version de PHP : 8.2.0
 
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS `customers` (
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_customers_email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `customers`
@@ -48,7 +48,8 @@ INSERT INTO `customers` (`id`, `name`, `email`, `created_at`, `updated_at`) VALU
 (3, 'Marcus Milaire', 'marcus@test.com', '2026-11-02 06:48:03', '2026-11-02 06:48:03'),
 (4, 'Felana Rakoto', 'felana@test.com', '2026-11-02 06:48:03', '2026-11-02 06:48:03'),
 (5, 'Tojo soa', 'tojo@test.com', '2026-11-02 06:48:03', '2026-11-02 06:48:03'),
-(6, 'Jean Dupont', 'jean@example.com', '2026-11-02 19:08:06', '2026-11-03 07:07:31');
+(6, 'Jean Dupont', 'jean@example.com', '2026-11-02 19:08:06', '2026-11-03 07:07:31'),
+(12, 'Donacien Rakoto', 'Donacien@example.com', '2026-11-04 12:04:23', '2026-11-04 12:04:23');
 
 -- --------------------------------------------------------
 
@@ -65,7 +66,7 @@ CREATE TABLE IF NOT EXISTS `events` (
   PRIMARY KEY (`id`),
   KEY `idx_events_customer_created` (`customer_id`,`created_at`),
   KEY `idx_events_customer_type` (`customer_id`,`event_type`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Déchargement des données de la table `events`
@@ -83,7 +84,9 @@ INSERT INTO `events` (`id`, `customer_id`, `event_type`, `created_at`) VALUES
 (9, 6, 'purchase', '2026-11-02 19:15:40'),
 (10, 6, 'purchase', '2026-11-02 19:15:51'),
 (11, 6, 'purchase', '2026-11-02 19:16:15'),
-(12, 6, 'purchase', '2026-11-03 07:07:31');
+(12, 6, 'purchase', '2026-11-03 07:07:31'),
+(13, 12, 'purchase', '2026-11-04 12:04:23'),
+(14, 12, 'purchase', '2026-11-04 15:24:20');
 
 -- --------------------------------------------------------
 
@@ -98,51 +101,59 @@ CREATE TABLE IF NOT EXISTS `event_properties` (
   `property_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
   `property_value` text COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `value_number` decimal(12,2) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_event_properties_event_id` (`event_id`),
   KEY `idx_event_properties_name` (`property_name`),
-  KEY `idx_properties_name_event` (`property_name`,`event_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `idx_properties_name_event` (`property_name`,`event_id`),
+  KEY `idx_property_name_value` (`property_name`,`value_number`),
+  KEY `idx_properties_event_name_number` (`event_id`,`property_name`,`value_number`)
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `event_properties`
 --
 
-INSERT INTO `event_properties` (`id`, `event_id`, `property_name`, `property_value`, `created_at`) VALUES
-(1, 1, 'page_url', '/products', '2026-11-02 06:48:03'),
-(2, 1, 'page_title', 'Liste des produits', '2026-11-02 06:48:03'),
-(3, 2, 'product_name', 'Ordinateur portable', '2026-11-02 06:48:03'),
-(4, 2, 'price', '1200', '2026-11-02 06:48:03'),
-(5, 2, 'currency', 'EUR', '2026-11-02 06:48:03'),
-(6, 2, 'quantity', '1', '2026-11-02 06:48:03'),
-(7, 3, 'product_name', 'Smartphone', '2026-11-02 06:48:03'),
-(8, 3, 'category', 'Électronique', '2026-11-02 06:48:03'),
-(9, 4, 'product_name', 'Casque audio', '2026-11-02 06:48:03'),
-(10, 4, 'quantity', '2', '2026-11-02 06:48:03'),
-(11, 5, 'product_name', 'Clavier', '2026-11-02 06:48:03'),
-(12, 5, 'price', '80', '2026-11-02 06:48:03'),
-(13, 5, 'currency', 'EUR', '2026-11-02 06:48:03'),
-(14, 5, 'quantity', '1', '2026-11-02 06:48:03'),
-(15, 6, 'page_url', '/about', '2026-11-02 06:48:03'),
-(16, 6, 'page_title', 'À propos', '2026-11-02 06:48:03'),
-(17, 7, 'amount', '150', '2026-11-02 19:08:06'),
-(18, 7, 'currency', 'EUR', '2026-11-02 19:08:06'),
-(19, 7, 'product_id', '25', '2026-11-02 19:08:06'),
-(20, 8, 'amount', '150', '2026-11-02 19:11:52'),
-(21, 8, 'currency', 'EUR', '2026-11-02 19:11:52'),
-(22, 8, 'product_id', '25', '2026-11-02 19:11:52'),
-(23, 9, 'amount', '[150,12]', '2026-11-02 19:15:40'),
-(24, 9, 'currency', 'EUR', '2026-11-02 19:15:40'),
-(25, 9, 'product_id', '25', '2026-11-02 19:15:40'),
-(26, 10, 'amount', '[150,12]', '2026-11-02 19:15:51'),
-(27, 10, 'currency', 'EUR', '2026-11-02 19:15:51'),
-(28, 10, 'product_id', '25', '2026-11-02 19:15:51'),
-(29, 11, 'amount', '[150,12]', '2026-11-02 19:16:15'),
-(30, 11, 'currency', 'EUR', '2026-11-02 19:16:15'),
-(31, 11, 'product_id', '25', '2026-11-02 19:16:15'),
-(32, 12, 'amount', '150', '2026-11-03 07:07:31'),
-(33, 12, 'currency', 'EUR', '2026-11-03 07:07:31'),
-(34, 12, 'product_id', '25', '2026-11-03 07:07:31');
+INSERT INTO `event_properties` (`id`, `event_id`, `property_name`, `property_value`, `created_at`, `value_number`) VALUES
+(1, 1, 'page_url', '/products', '2026-11-02 06:48:03', NULL),
+(2, 1, 'page_title', 'Liste des produits', '2026-11-02 06:48:03', NULL),
+(3, 2, 'product_name', 'Ordinateur portable', '2026-11-02 06:48:03', NULL),
+(4, 2, 'price', '1200', '2026-11-02 06:48:03', '1200.00'),
+(5, 2, 'currency', 'EUR', '2026-11-02 06:48:03', NULL),
+(6, 2, 'quantity', '1', '2026-11-02 06:48:03', '1.00'),
+(7, 3, 'product_name', 'Smartphone', '2026-11-02 06:48:03', NULL),
+(8, 3, 'category', 'Électronique', '2026-11-02 06:48:03', NULL),
+(9, 4, 'product_name', 'Casque audio', '2026-11-02 06:48:03', NULL),
+(10, 4, 'quantity', '2', '2026-11-02 06:48:03', '2.00'),
+(11, 5, 'product_name', 'Clavier', '2026-11-02 06:48:03', NULL),
+(12, 5, 'price', '80', '2026-11-02 06:48:03', '80.00'),
+(13, 5, 'currency', 'EUR', '2026-11-02 06:48:03', NULL),
+(14, 5, 'quantity', '1', '2026-11-02 06:48:03', '1.00'),
+(15, 6, 'page_url', '/about', '2026-11-02 06:48:03', NULL),
+(16, 6, 'page_title', 'À propos', '2026-11-02 06:48:03', NULL),
+(17, 7, 'amount', '150', '2026-11-02 19:08:06', '150.00'),
+(18, 7, 'currency', 'EUR', '2026-11-02 19:08:06', NULL),
+(19, 7, 'product_id', '25', '2026-11-02 19:08:06', '25.00'),
+(20, 8, 'amount', '150', '2026-11-02 19:11:52', '150.00'),
+(21, 8, 'currency', 'EUR', '2026-11-02 19:11:52', NULL),
+(22, 8, 'product_id', '25', '2026-11-02 19:11:52', '25.00'),
+(24, 9, 'currency', 'EUR', '2026-11-02 19:15:40', NULL),
+(25, 9, 'product_id', '25', '2026-11-02 19:15:40', '25.00'),
+(26, 10, 'amount', '[150,12]', '2026-11-02 19:15:51', NULL),
+(27, 10, 'currency', 'EUR', '2026-11-02 19:15:51', NULL),
+(28, 10, 'product_id', '25', '2026-11-02 19:15:51', '25.00'),
+(29, 11, 'amount', '[150,12]', '2026-11-02 19:16:15', NULL),
+(30, 11, 'currency', 'EUR', '2026-11-02 19:16:15', NULL),
+(31, 11, 'product_id', '25', '2026-11-02 19:16:15', '25.00'),
+(32, 12, 'amount', '150', '2026-11-03 07:07:31', '150.00'),
+(33, 12, 'currency', 'EUR', '2026-11-03 07:07:31', NULL),
+(34, 12, 'product_id', '25', '2026-11-03 07:07:31', '25.00'),
+(35, 13, 'amount', '2000', '2026-11-04 12:04:23', '2000.00'),
+(36, 13, 'currency', 'EUR', '2026-11-04 12:04:23', NULL),
+(37, 13, 'product_id', '58', '2026-11-04 12:04:23', '58.00'),
+(38, 14, 'amount', '2000', '2026-11-04 15:24:20', '2000.00'),
+(39, 14, 'currency', 'EUR', '2026-11-04 15:24:20', NULL),
+(40, 14, 'product_id', '58', '2026-11-04 15:24:20', '58.00');
 
 --
 -- Contraintes pour les tables déchargées

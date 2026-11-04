@@ -1,17 +1,18 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Services\CustomerSegmentationService;
+use App\Services\SegmentService;
 use InvalidArgumentException;
 use JsonException;
 use Throwable;
 
-class CustomerSegmentationController
+class SegmentController
 {
     public function __construct(
-        private CustomerSegmentationService $service
+        private SegmentService $segmentService
     ) {}
 
     public function index(): void
@@ -43,7 +44,7 @@ class CustomerSegmentationController
                 );
             }
 
-            $customers = $this->service->getSegmentedCustomers(
+            $customers = $this->segmentService->getSegmentedCustomers(
                 $minPurchases,
                 $minSpend
             );
@@ -77,29 +78,24 @@ class CustomerSegmentationController
                 JSON_THROW_ON_ERROR
             );
 
-            if (
-                !is_array($input) ||
-                !isset($input['conditions']) ||
-                !is_array($input['conditions'])
-            ) {
+            if (!is_array($input)) {
                 throw new InvalidArgumentException(
-                    'A conditions array is required'
+                    'Invalid request body'
                 );
             }
 
-            $customers = $this->service->querySegments(
-                $input['conditions']
-            );
+            $customers = $this->segmentService->findCustomers($input);
 
             http_response_code(200);
 
             echo json_encode([
                 'success' => true,
-                'data' => $customers,
-                'total' => count($customers)
+                'count' => count($customers),
+                'data' => $customers
             ], JSON_THROW_ON_ERROR);
 
         } catch (JsonException $e) {
+
             http_response_code(400);
 
             echo json_encode([
@@ -108,6 +104,7 @@ class CustomerSegmentationController
             ]);
 
         } catch (InvalidArgumentException $e) {
+
             http_response_code(422);
 
             echo json_encode([
@@ -116,9 +113,10 @@ class CustomerSegmentationController
             ]);
 
         } catch (Throwable $e) {
-            error_log($e->getMessage());
 
             http_response_code(500);
+
+            error_log($e->getMessage());
 
             echo json_encode([
                 'success' => false,

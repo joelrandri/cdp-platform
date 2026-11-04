@@ -1,8 +1,9 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Repositories;
-use InvalidArgumentException;
+
 use PDO;
 
 class CustomerSegmentationRepository
@@ -11,6 +12,10 @@ class CustomerSegmentationRepository
         private PDO $pdo
     ) {}
 
+    /**
+     * Recherche les clients selon le nombre minimum d'achats
+     * et le montant minimum dépensé.
+     */
     public function findCustomersBySegment(
         int $minPurchases,
         float $minSpend
@@ -39,7 +44,7 @@ class CustomerSegmentationRepository
             LEFT JOIN (
                 SELECT
                     event_id,
-                    CAST(MAX(property_value) AS DECIMAL(10,2)) AS price
+                    MAX(value_number) AS price
                 FROM event_properties
                 WHERE property_name = 'price'
                 GROUP BY event_id
@@ -48,13 +53,16 @@ class CustomerSegmentationRepository
             LEFT JOIN (
                 SELECT
                     event_id,
-                    CAST(MAX(property_value) AS DECIMAL(10,2)) AS quantity
+                    MAX(value_number) AS quantity
                 FROM event_properties
                 WHERE property_name = 'quantity'
                 GROUP BY event_id
             ) quantity ON quantity.event_id = e.id
 
-            GROUP BY c.id, c.name, c.email
+            GROUP BY
+                c.id,
+                c.name,
+                c.email
 
             HAVING
                 total_purchases >= :min_purchases
@@ -80,50 +88,88 @@ class CustomerSegmentationRepository
                 (float) $customer['total_spend'];
         }
 
+        unset($customer);
+
         return $customers;
     }
 
-    public function findCustomersByConditions(array $conditions): array
-    {
+
+    public function findCustomersByConditions(
+        array $conditions,
+        string $logic = 'AND'
+    ): array {
         $sql = "
-            SELECT c.id, c.name, c.email
+            SELECT
+                c.id,
+                c.name,
+                c.email
             FROM customers c
-            WHERE 1 = 1
+            WHERE
         ";
 
+        $conditionQueries = [];
         $params = [];
 
-        $allowedOperators = ['=', '!=', '>', '<', '>=', '<='];
-
         foreach ($conditions as $index => $condition) {
-            $operator = $condition['operator'];
-
-            if (!in_array($operator, $allowedOperators, true)) {
-                throw new InvalidArgumentException('Invalid operator');
-            }
 
             $eventParam = ":event_$index";
             $propertyParam = ":property_$index";
             $valueParam = ":value_$index";
 
-            $sql .= "
-                AND EXISTS (
+            // Choisir la colonne selon le type de valeur
+            $valueColumn = $condition['type'] === 'number'
+                ? 'value_number'
+                : 'property_value';
+
+            // Traduire les opérateurs textuels en SQL
+            $operator = $condition['operator'];
+            $value = $condition['value'];
+
+            switch ($operator) {
+                case 'contains':
+                    $sqlOperator = 'LIKE';
+                    $value = '%' . $value . '%';
+                    break;
+
+                case 'starts_with':
+                    $sqlOperator = 'LIKE';
+                    $value = $value . '%';
+                    break;
+
+                case 'ends_with':
+                    $sqlOperator = 'LIKE';
+                    $value = '%' . $value;
+                    break;
+
+                default:
+                    $sqlOperator = $operator;
+            }
+
+            $conditionQueries[] = "
+                EXISTS (
                     SELECT 1
                     FROM events e
+
                     INNER JOIN event_properties ep
                         ON ep.event_id = e.id
+
                     WHERE e.customer_id = c.id
+
                     AND e.event_type = $eventParam
+
                     AND ep.property_name = $propertyParam
-                    AND CAST(ep.property_value AS DECIMAL(12,2))
-                        $operator $valueParam
+
+                    AND ep.$valueColumn $sqlOperator $valueParam
                 )
             ";
 
             $params[$eventParam] = $condition['event'];
             $params[$propertyParam] = $condition['property'];
-            $params[$valueParam] = $condition['value'];
+            $params[$valueParam] = $value;
         }
+
+        // Combiner les conditions avec AND ou OR
+        $sql .= '(' . implode(" $logic ", $conditionQueries) . ')';
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
