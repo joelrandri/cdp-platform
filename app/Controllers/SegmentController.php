@@ -78,24 +78,29 @@ class SegmentController
                 JSON_THROW_ON_ERROR
             );
 
-            if (!is_array($input)) {
+            if (
+                !is_array($input) ||
+                !isset($input['conditions']) ||
+                !is_array($input['conditions'])
+            ) {
                 throw new InvalidArgumentException(
-                    'Invalid request body'
+                    'A conditions array is required'
                 );
             }
 
-            $customers = $this->segmentService->findCustomers($input);
+            $customers = $this->segmentService->querySegments(
+                $input['conditions']
+            );
 
             http_response_code(200);
 
             echo json_encode([
                 'success' => true,
-                'count' => count($customers),
-                'data' => $customers
+                'data' => $customers,
+                'total' => count($customers)
             ], JSON_THROW_ON_ERROR);
 
         } catch (JsonException $e) {
-
             http_response_code(400);
 
             echo json_encode([
@@ -104,7 +109,6 @@ class SegmentController
             ]);
 
         } catch (InvalidArgumentException $e) {
-
             http_response_code(422);
 
             echo json_encode([
@@ -113,10 +117,9 @@ class SegmentController
             ]);
 
         } catch (Throwable $e) {
+            error_log($e->getMessage());
 
             http_response_code(500);
-
-            error_log($e->getMessage());
 
             echo json_encode([
                 'success' => false,

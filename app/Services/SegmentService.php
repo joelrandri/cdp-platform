@@ -39,22 +39,11 @@ class SegmentService
     }
 
 
-    public function findCustomers(array $data): array
+    public function querySegments(array $conditions): array
     {
-        $logic = strtoupper($data['logic'] ?? 'AND');
-
-        if (!in_array($logic, ['AND', 'OR'], true)) {
-            throw new InvalidArgumentException(
-                'Logic must be AND or OR'
-            );
-        }
-
-        $conditions = $data['conditions'] ?? null;
-
         if (
-            !is_array($conditions) ||
+            empty($conditions) ||
             !array_is_list($conditions) ||
-            count($conditions) < 1 ||
             count($conditions) > 10
         ) {
             throw new InvalidArgumentException(
@@ -62,91 +51,49 @@ class SegmentService
             );
         }
 
-        $validatedConditions = [];
+        $allowedOperators = ['=', '!=', '>', '<', '>=', '<='];
 
         foreach ($conditions as $condition) {
-
             if (!is_array($condition)) {
-                throw new InvalidArgumentException(
-                    'Each condition must be an object'
-                );
+                throw new InvalidArgumentException('Invalid condition');
             }
 
-            $eventType = $condition['event_type'] ?? '';
-            $property = $condition['property'] ?? null;
-            $operator = $condition['operator'] ?? null;
-            $value = $condition['value'] ?? null;
-
-            if (
-                !is_string($eventType) ||
-                trim($eventType) === '' ||
-                !is_string($property) ||
-                trim($property) === ''
-            ) {
-                throw new InvalidArgumentException(
-                    'Event and property are required'
-                );
-            }
-
-            if (!is_string($operator)) {
-                throw new InvalidArgumentException(
-                    'Invalid operator'
-                );
-            }
-
-            $operator = strtolower(trim($operator));
-
-            // Déterminer le type de la valeur
-            if (is_int($value) || is_float($value)) {
-                $type = 'number';
-            } elseif (is_string($value)) {
-                $type = 'string';
-            } else {
-                throw new InvalidArgumentException(
-                    'Value must be a number or a string'
-                );
-            }
-
-            if ($type === 'number') {
-
-                $allowedOperators = [
-                    '=', '!=', '>', '<', '>=', '<='
-                ];
-
-                if (!is_finite((float) $value)) {
+            foreach (['event', 'property', 'operator', 'value'] as $field) {
+                if (!array_key_exists($field, $condition)) {
                     throw new InvalidArgumentException(
-                        'Invalid numeric value'
+                        "Missing field: $field"
                     );
                 }
-
-            } else {
-
-                $allowedOperators = [
-                    '=', '!=',
-                    'contains',
-                    'starts_with',
-                    'ends_with'
-                ];
             }
 
-            if (!in_array($operator, $allowedOperators, true)) {
+            if (
+                !is_string($condition['event']) ||
+                trim($condition['event']) === '' ||
+                !is_string($condition['property']) ||
+                trim($condition['property']) === ''
+            ) {
                 throw new InvalidArgumentException(
-                    'Invalid operator for value type'
+                    'Event and property must be non-empty strings'
                 );
             }
 
-            $validatedConditions[] = [
-                'event' => trim($eventType),
-                'property' => trim($property),
-                'type' => $type,
-                'operator' => $operator,
-                'value' => $value
-            ];
+            if (
+                !is_string($condition['operator']) ||
+                !in_array($condition['operator'], $allowedOperators, true)
+            ) {
+                throw new InvalidArgumentException('Invalid operator');
+            }
+
+            if (
+                !is_numeric($condition['value']) ||
+                !is_finite((float) $condition['value'])
+            ) {
+                throw new InvalidArgumentException(
+                    'Condition value must be numeric'
+                );
+            }
         }
 
-        return $this->repository->findCustomersByConditions(
-            $validatedConditions,
-            $logic
-        );
+        return $this->repository->findCustomersByConditions($conditions);
     }
 }
