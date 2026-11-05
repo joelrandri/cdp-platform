@@ -303,7 +303,6 @@ tests/
 - **Services:** Contain business logic and validation.
 - **Repositories:** Handle database operations using PDO.
 - **Middleware:** Handle cross-cutting concerns such as API authentication.
-- **Workers:** Process background jobs.
 - **Core:** Contains shared application components such as routing and constants.
 
 ## 8. Design Decisions and Tradeoffs
